@@ -1,6 +1,6 @@
 module github.com/batchcorp/terraform-provider-plumber
 
-go 1.17
+go 1.16
 
 require (
 	github.com/batchcorp/plumber-schemas v0.0.142
