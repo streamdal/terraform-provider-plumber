@@ -179,14 +179,16 @@ func buildTunnelOptionsKafka(d *schema.ResourceData) (*opts.TunnelOptions, diag.
 		},
 	}
 
-	if d.Get("dproxy") != nil {
-		dproxyData := d.Get("dproxy").([]interface{})
-		dproxyConfig := dproxyData[0].(map[string]interface{})
-
-		opts.XGrpcAddress = dproxyConfig["address"].(string)
-		opts.XGrpcInsecure = dproxyConfig["disable_tls"].(bool)
-		opts.XGrpcTimeoutSeconds = uint32(dproxyConfig["connection_timeout"].(int))
-	}
+	//dproxyBlock := d.Get("dproxy")
+	//if dproxyBlock != nil {
+	//	dproxyData, ok := dproxyBlock.([]interface{})
+	//	if ok && len(dproxyData) > 0 {
+	//		dproxyConfig := dproxyData[0].(map[string]interface{})
+	//		opts.XGrpcAddress = dproxyConfig["address"].(string)
+	//		opts.XGrpcInsecure = dproxyConfig["disable_tls"].(bool)
+	//		opts.XGrpcTimeoutSeconds = uint32(dproxyConfig["connection_timeout"].(int))
+	//	}
+	//}
 
 	return opts, diags
 }

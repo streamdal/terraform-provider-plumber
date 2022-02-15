@@ -234,13 +234,16 @@ func buildRelayOptions(d *schema.ResourceData) (*opts.RelayOptions, diag.Diagnos
 		},
 	}
 
-	if d.Get("grpc") != nil {
-		grpcData := d.Get("grpc").([]interface{})
-		grpcConfig := grpcData[0].(map[string]interface{})
-		cfg.XBatchshGrpcAddress = grpcConfig["address"].(string)
-		cfg.XBatchshGrpcDisableTls = grpcConfig["disable_tls"].(bool)
-		cfg.XBatchshGrpcTimeoutSeconds = int32(grpcConfig["connection_timeout"].(int))
-	}
+	//grpcBlock := d.Get("grpc")
+	//if grpcBlock != nil {
+	//	grpcData, ok := grpcBlock.([]interface{})
+	//	if ok && len(grpcData) > 0 {
+	//		grpcConfig := grpcData[0].(map[string]interface{})
+	//		cfg.XBatchshGrpcAddress = grpcConfig["address"].(string)
+	//		cfg.XBatchshGrpcDisableTls = grpcConfig["disable_tls"].(bool)
+	//		cfg.XBatchshGrpcTimeoutSeconds = int32(grpcConfig["connection_timeout"].(int))
+	//	}
+	//}
 
 	return cfg, diags
 }
