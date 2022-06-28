@@ -106,6 +106,51 @@ func resourceTunnel() *schema.Resource {
 					},
 				},
 			},
+			"rabbit": {
+				Description: "Replay messages to a RabbitMQ connection",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"exchange_name": {
+							Description: "Exchange to write message(s)",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+						"routing_key": {
+							Description: "Routing key to write message(s) to",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+						"app_id": {
+							Description: "Fills message properties $app_id with this value",
+							Type:        schema.TypeString,
+							Optional:    true,
+						},
+						"exchange_type": {
+							Description: "The type of exchange we are working with: direct,topic,headers,fanout",
+							Type:        schema.TypeString,
+							Optional:    true,
+						},
+						"exchange_declare": {
+							Description: "Whether to declare an exchange (if it does not exist)",
+							Type:        schema.TypeBool,
+							Optional:    true,
+						},
+						"exchange_durable": {
+							Description: "Whether to make a declared exchange durable",
+							Type:        schema.TypeBool,
+							Optional:    true,
+						},
+						"exchange_auto_delete": {
+							Description: "Whether to auto-delete the exchange (after writes)",
+							Type:        schema.TypeBool,
+							Optional:    true,
+						},
+					},
+				},
+			},
 		},
 
 		Importer: &schema.ResourceImporter{
@@ -143,20 +188,76 @@ func buildTunnel(d *schema.ResourceData) (*opts.TunnelOptions, diag.Diagnostics)
 	var diags diag.Diagnostics
 	var opts *opts.TunnelOptions
 
-	if d.Get("kafka") != nil {
+	switch getBusType(d) {
+	case "kafka":
 		opts, diags = buildTunnelOptionsKafka(d)
 		if diags.HasError() {
 			return nil, diags
 		}
 		return opts, diags
+	case "rabbit":
+		opts, diags = buildTunnelOptionsRabbit(d)
+		if diags.HasError() {
+			return nil, diags
+		}
+		return opts, diags
+	default:
+		return nil, append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unknown tunnel message bus type. Must be one of: 'kafka', 'rabbit'", // TODO: expand options
+		})
 	}
-	// TODO: expand options
-	// if d.Get("rabbit") ...
 
 	return nil, append(diags, diag.Diagnostic{
 		Severity: diag.Error,
 		Summary:  "Unknown tunnel message bus type. Must be one of: 'kafka'", // TODO: expand options
 	})
+}
+
+func buildTunnelOptionsRabbit(d *schema.ResourceData) (*opts.TunnelOptions, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	kafkaData := d.Get("rabbit").([]interface{})
+	config := kafkaData[0].(map[string]interface{})
+
+	opts := &opts.TunnelOptions{
+		ApiToken:     d.Get("batchsh_api_token").(string),
+		ConnectionId: d.Get("connection_id").(string),
+		Name:         d.Get("name").(string),
+		XActive:      d.Get("active").(bool),
+		Rabbit: &opts.TunnelGroupRabbitOptions{
+			//Args: &args.RabbitWriteArgs{
+			//	Key:     kafkaConfig["key"].(string),
+			//	Headers: convertStringMap(kafkaConfig["headers"].(map[string]interface{})),
+			//	Topics:  flattenKafkaTopics(kafkaConfig["topics"].([]interface{})),
+			//},
+			Args: &args.RabbitWriteArgs{
+				ExchangeName:         config["exchange_name"].(string),
+				RoutingKey:           config["routing_key"].(string),
+				AppId:                config["app_id"].(string),
+				ExchangeType:         config["exchange_type"].(string),
+				ExchangeDeclare:      false,
+				ExchangeDurable:      false,
+				ExchangeAutoDelete:   false,
+				XXX_NoUnkeyedLiteral: struct{}{},
+				XXX_unrecognized:     nil,
+				XXX_sizecache:        0,
+			},
+		},
+	}
+
+	//dproxyBlock := d.Get("dproxy")
+	//if dproxyBlock != nil {
+	//	dproxyData, ok := dproxyBlock.([]interface{})
+	//	if ok && len(dproxyData) > 0 {
+	//		dproxyConfig := dproxyData[0].(map[string]interface{})
+	//		opts.XGrpcAddress = dproxyConfig["address"].(string)
+	//		opts.XGrpcInsecure = dproxyConfig["disable_tls"].(bool)
+	//		opts.XGrpcTimeoutSeconds = uint32(dproxyConfig["connection_timeout"].(int))
+	//	}
+	//}
+
+	return opts, diags
 }
 
 func buildTunnelOptionsKafka(d *schema.ResourceData) (*opts.TunnelOptions, diag.Diagnostics) {

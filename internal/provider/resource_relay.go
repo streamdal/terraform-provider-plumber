@@ -170,6 +170,60 @@ func resourceRelay() *schema.Resource {
 					},
 				},
 			},
+			"rabbit": {
+				Type:     schema.TypeList,
+				MaxItems: 1,
+				Optional: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"exchange_name": {
+							Description: "Name of the exchange",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+						"queue_name": {
+							Description: "Name of the queue where messages will be routed to",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+						"binding_key": {
+							Description: "Binding key for topic based exchanges",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+						"consumer_tag": {
+							Description: "How to identify the consumer to RabbitMQ",
+							Type:        schema.TypeString,
+							Optional:    true,
+						},
+						"queue_exclusive": {
+							Description: "Whether plumber should be the only one using the queue",
+							Type:        schema.TypeBool,
+							Optional:    true,
+						},
+						"queue_declare": {
+							Description: "Whether to create/declare the queue (if it does not exist)",
+							Type:        schema.TypeBool,
+							Optional:    true,
+						},
+						"queue_durable": {
+							Description: "Whether the queue should survive after disconnect",
+							Type:        schema.TypeBool,
+							Optional:    true,
+						},
+						"queue_delete": {
+							Description: "Whether to auto-delete the queue after plumber has disconnected",
+							Type:        schema.TypeBool,
+							Optional:    true,
+						},
+						"auto_ack": {
+							Description: "Automatically acknowledge receipt of read/received messages",
+							Type:        schema.TypeBool,
+							Optional:    true,
+						},
+					},
+				},
+			},
 		},
 
 		Importer: &schema.ResourceImporter{
@@ -206,9 +260,6 @@ func resourceRelayCreate(ctx context.Context, d *schema.ResourceData, m interfac
 func buildRelayOptions(d *schema.ResourceData) (*opts.RelayOptions, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
-	kafkaData := d.Get("kafka").([]interface{})
-	kafkaConfig := kafkaData[0].(map[string]interface{})
-
 	cfg := &opts.RelayOptions{
 		CollectionToken:        d.Get("collection_token").(string),
 		BatchSize:              int32(d.Get("batch_size").(int)),
@@ -218,7 +269,14 @@ func buildRelayOptions(d *schema.ResourceData) (*opts.RelayOptions, diag.Diagnos
 		StatsEnable:            false,
 		StatsReportIntervalSec: 0,
 		XActive:                d.Get("active").(bool),
-		Kafka: &opts.RelayGroupKafkaOptions{
+	}
+
+	switch getBusType(d) {
+	case "kafka":
+		kafkaData := d.Get("kafka").([]interface{})
+		kafkaConfig := kafkaData[0].(map[string]interface{})
+
+		cfg.Kafka = &opts.RelayGroupKafkaOptions{
 			Args: &args.KafkaRelayArgs{
 				Topics:                  flattenKafkaTopics(kafkaConfig["topics"].([]interface{})),
 				ReadOffset:              int64(kafkaConfig["read_offset"].(int)),
@@ -231,19 +289,42 @@ func buildRelayOptions(d *schema.ResourceData) (*opts.RelayOptions, diag.Diagnos
 				RebalanceTimeoutSeconds: int32(kafkaConfig["rebalance_timeout_seconds"].(int)),
 				QueueCapacity:           int32(kafkaConfig["queue_capacity"].(int)),
 			},
-		},
+		}
+	case "rabbit":
+		rabbitData := d.Get("rabbit").([]interface{})
+		config := rabbitData[0].(map[string]interface{})
+
+		cfg.Rabbit = &opts.RelayGroupRabbitOptions{
+			Args: &args.RabbitReadArgs{
+				ExchangeName:   config["exchange_name"].(string),
+				QueueName:      config["queue_name"].(string),
+				BindingKey:     config["binding_key"].(string),
+				QueueExclusive: config["queue_exclusive"].(bool),
+				QueueDeclare:   config["queue_declare"].(bool),
+				QueueDurable:   config["queue_durable"].(bool),
+				AutoAck:        config["auto_ack"].(bool),
+				ConsumerTag:    config["consumer_tag"].(string),
+				QueueDelete:    config["queue_delete"].(bool),
+				QueueArg:       convertStringMap(config["queue_arg"].(map[string]interface{})),
+			},
+		}
+	default:
+		return nil, append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unknown connection type. Must be one of: 'kafka', 'rabbit", // TODO: expand options
+		})
 	}
 
-	//grpcBlock := d.Get("grpc")
-	//if grpcBlock != nil {
-	//	grpcData, ok := grpcBlock.([]interface{})
-	//	if ok && len(grpcData) > 0 {
-	//		grpcConfig := grpcData[0].(map[string]interface{})
-	//		cfg.XBatchshGrpcAddress = grpcConfig["address"].(string)
-	//		cfg.XBatchshGrpcDisableTls = grpcConfig["disable_tls"].(bool)
-	//		cfg.XBatchshGrpcTimeoutSeconds = int32(grpcConfig["connection_timeout"].(int))
-	//	}
-	//}
+	grpcBlock := d.Get("grpc")
+	if grpcBlock != nil {
+		grpcData, ok := grpcBlock.([]interface{})
+		if ok && len(grpcData) > 0 {
+			grpcConfig := grpcData[0].(map[string]interface{})
+			cfg.XBatchshGrpcAddress = grpcConfig["address"].(string)
+			cfg.XBatchshGrpcDisableTls = grpcConfig["disable_tls"].(bool)
+			cfg.XBatchshGrpcTimeoutSeconds = int32(grpcConfig["connection_timeout"].(int))
+		}
+	}
 
 	return cfg, diags
 }

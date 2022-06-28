@@ -11,6 +11,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
+var types = []string{"kafka", "rabbit"}
+
 func init() {
 	schema.DescriptionKind = schema.StringMarkdown
 	schema.SchemaDescriptionBuilder = func(s *schema.Schema) string {
@@ -113,4 +115,15 @@ func buildFiltersDataSource(set *schema.Set) []*plumber.Filter {
 		})
 	}
 	return filters
+}
+
+// getBusType is a convenience function to return the message bus type we are operating on
+func getBusType(d *schema.ResourceData) string {
+	for _, bus := range types {
+		if opts, ok := d.Get(bus).([]interface{}); ok && len(opts) > 0 {
+			return bus
+		}
+	}
+
+	return ""
 }
