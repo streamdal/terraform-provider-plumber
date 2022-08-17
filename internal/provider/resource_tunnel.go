@@ -207,11 +207,6 @@ func buildTunnel(d *schema.ResourceData) (*opts.TunnelOptions, diag.Diagnostics)
 			Summary:  "Unknown tunnel message bus type. Must be one of: 'kafka', 'rabbit'", // TODO: expand options
 		})
 	}
-
-	return nil, append(diags, diag.Diagnostic{
-		Severity: diag.Error,
-		Summary:  "Unknown tunnel message bus type. Must be one of: 'kafka'", // TODO: expand options
-	})
 }
 
 func buildTunnelOptionsRabbit(d *schema.ResourceData) (*opts.TunnelOptions, diag.Diagnostics) {
@@ -226,22 +221,14 @@ func buildTunnelOptionsRabbit(d *schema.ResourceData) (*opts.TunnelOptions, diag
 		Name:         d.Get("name").(string),
 		XActive:      d.Get("active").(bool),
 		Rabbit: &opts.TunnelGroupRabbitOptions{
-			//Args: &args.RabbitWriteArgs{
-			//	Key:     kafkaConfig["key"].(string),
-			//	Headers: convertStringMap(kafkaConfig["headers"].(map[string]interface{})),
-			//	Topics:  flattenKafkaTopics(kafkaConfig["topics"].([]interface{})),
-			//},
 			Args: &args.RabbitWriteArgs{
-				ExchangeName:         config["exchange_name"].(string),
-				RoutingKey:           config["routing_key"].(string),
-				AppId:                config["app_id"].(string),
-				ExchangeType:         config["exchange_type"].(string),
-				ExchangeDeclare:      false,
-				ExchangeDurable:      false,
-				ExchangeAutoDelete:   false,
-				XXX_NoUnkeyedLiteral: struct{}{},
-				XXX_unrecognized:     nil,
-				XXX_sizecache:        0,
+				ExchangeName:       config["exchange_name"].(string),
+				RoutingKey:         config["routing_key"].(string),
+				AppId:              config["app_id"].(string),
+				ExchangeType:       config["exchange_type"].(string),
+				ExchangeDeclare:    config["exchange_declare"].(bool),
+				ExchangeDurable:    config["exchange_durable"].(bool),
+				ExchangeAutoDelete: config["exchange_auto_delete"].(bool),
 			},
 		},
 	}
