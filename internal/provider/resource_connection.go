@@ -92,6 +92,31 @@ func resourceConnection() *schema.Resource {
 					},
 				},
 			},
+			"rabbit": {
+				Description: "Arguments for a RabbitMQ connection",
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"address": {
+							Description: "Full DSN of RabbitMQ cluister (ex: amqp://bus.domain.com:5672)",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+						"use_tls": {
+							Description: "Force TLS connection (regardless of DSN)",
+							Type:        schema.TypeBool,
+							Optional:    true,
+						},
+						"tls_skip_verify": {
+							Description: "Skip TLS certificate verification",
+							Type:        schema.TypeBool,
+							Optional:    true,
+						},
+					},
+				},
+			},
 		},
 
 		Importer: &schema.ResourceImporter{
@@ -122,6 +147,10 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, m inter
 	if kafka := opts.GetKafka(); kafka != nil {
 		d.Set("kafka", flattenKafkaConnection(kafka))
 	}
+
+	if rabbit := opts.GetRabbit(); rabbit != nil {
+		d.Set("rabbit", flattenRabbitConnection(rabbit))
+	}
 	// TODO: expand for other message buses
 
 	return diags
@@ -136,6 +165,14 @@ func flattenKafkaConnection(k *args.KafkaConn) []map[string]interface{} {
 		"sasl_type":          k.SaslType.String(),
 		"sasl_username":      k.SaslUsername,
 		"sasl_password":      k.SaslPassword,
+	}}
+}
+
+func flattenRabbitConnection(k *args.RabbitConn) []map[string]interface{} {
+	return []map[string]interface{}{{
+		"address":         k.Address,
+		"use_tls":         k.UseTls,
+		"tls_skip_verify": k.TlsSkipVerify,
 	}}
 }
 
@@ -208,20 +245,26 @@ func buildConnection(d *schema.ResourceData) (*opts.ConnectionOptions, diag.Diag
 	var diags diag.Diagnostics
 	var conn *opts.ConnectionOptions
 
-	if d.Get("kafka") != nil {
+	// TODO: expand options
+	switch getBusType(d) {
+	case "kafka":
 		conn, diags = buildConnectionKafka(d)
 		if diags.HasError() {
 			return nil, diags
 		}
 		return conn, diags
+	case "rabbit":
+		conn, diags = buildConnectionRabbit(d)
+		if diags.HasError() {
+			return nil, diags
+		}
+		return conn, diags
+	default:
+		return nil, append(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  "Unknown connection type. Must be one of: 'kafka', 'rabbit", // TODO: expand options
+		})
 	}
-	// TODO: expand options
-	// if d.Get("rabbit") ...
-
-	return nil, append(diags, diag.Diagnostic{
-		Severity: diag.Error,
-		Summary:  "Unknown connection type. Must be one of: 'kafka'", // TODO: expand options
-	})
 }
 
 // buildConnectionKafka builds a plumber-schemas ConnectionOptions from a tf resource
@@ -243,6 +286,26 @@ func buildConnectionKafka(d *schema.ResourceData) (*opts.ConnectionOptions, diag
 				SaslType:       buildConnectionKafkaSASLType(data["sasl_type"].(string)),
 				SaslUsername:   data["sasl_username"].(string),
 				SaslPassword:   data["sasl_password"].(string),
+			},
+		},
+	}, diags
+}
+
+// buildConnectionRabbit builds a plumber-schemas ConnectionOptions from a tf resource
+func buildConnectionRabbit(d *schema.ResourceData) (*opts.ConnectionOptions, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	kafkaData := d.Get("rabbit").([]interface{})
+	data := kafkaData[0].(map[string]interface{})
+
+	return &opts.ConnectionOptions{
+		Name:  d.Get("name").(string),
+		Notes: d.Get("notes").(string),
+		Conn: &opts.ConnectionOptions_Rabbit{
+			Rabbit: &args.RabbitConn{
+				Address:       data["address"].(string),
+				UseTls:        data["use_tls"].(bool),
+				TlsSkipVerify: data["tls_skip_verify"].(bool),
 			},
 		},
 	}, diags

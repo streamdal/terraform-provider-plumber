@@ -56,6 +56,7 @@ resource "plumber_tunnel" "my_replay_tunnel" {
 At least one message bus relay configuration must be specified:
 
 - `kafka` - (Block List, Max: 1) Replay messages to a Kafka connection - see [below for nested schema](#nestedblock--kafka)
+- `rabbit` - (Block List, Max: 1) Replay messages to a RabbitMQ connection - see [below for nested schema](#nestedblock--rabbit)
 
 <a id="nestedblock--kafka"></a>
 ### Nested Schema for `kafka`
@@ -65,6 +66,23 @@ Optional:
 - `headers` - (Map of String) Headers to write messages with
 - `key` - (String) Key to write messages with
 - `topics` - (List of String) Topics to replay
+  
+
+<a id="nestedblock--rabbit"></a>
+### Nested Schema for `rabbit`
+
+Required:
+
+- `exchange_name` - (String)
+- `routing_key` - (String) Key to write messages with
+
+Optional:
+
+- `app_id` - (String) Fills message properties $app_id with this value
+- `exchange_type` - (String) The type of exchange we are working with: direct,topic,headers,fanout
+- `exchange_declare` - (Boolean) Whether to declare an exchange (if it does not exist)
+- `exchange_durable` - (Boolean) Whether to make a declared exchange durable
+- `exchange_auto_delete` - (Bollean) Whether to auto-delete the exchange (after writes)
 
 ## Attributes Reference
 

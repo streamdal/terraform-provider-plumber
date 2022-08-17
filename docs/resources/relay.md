@@ -53,6 +53,7 @@ resource "plumber_relay" "kafka_relay" {
 At least one message bus relay configuration must be specified:
 
 - `kafka` - (Block List, Max: 1) (see [below for nested schema](#nestedblock--kafka))
+- `rabbit` - (Block List, Max: 1) (see [below for nested schema](#nestedblock--rabbit))
 
 ### Optional
 
@@ -81,6 +82,25 @@ Optional:
 - `read_offset` - (Number) - Specify what offset the consumer should read from (Requires use_consumer_group to be true) (Default: `0`)
 - `rebalance_timeout_seconds` - (Number) - How long a coordinator will wait for member joins as part of a rebalance (Default: `0`)
 - `use_consumer_group` - (Boolean) -  Use a consumer group to read from Kafka
+
+<a id="nestedblock--rabbit"></a>
+### Nested Schema for `rabbit`
+
+Required:
+
+- `exchange_name` - (String) - Name of the exchange
+- `queue_name` - (String) - Name of the queue where messages will be routed to
+- `binding_key` - (String) - Binding key for topic based exchanges
+
+Optional:
+
+- `queue_exclusive` - (Boolean) - Name of the exchange
+- `queue_declare` - (Boolean) - Whether to create/declare the queue (if it does not exist)
+- `queue_durable` - (Boolean) - Whether plumber should be the only one using the queue
+- `auto_ack` - (Boolean) - Automatically acknowledge receipt of read/received messages
+- `consumer_tag` - (String) - How to identify the consumer to RabbitMQ
+- `queue_delete` - (Boolean) - Whether to auto-delete the queue after plumber has disconnected
+- `queue_arg` - (Map of String) -  Additional queue argument to send to RabbitMQ
 
 ## Attributes Reference
 
