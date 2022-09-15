@@ -44,7 +44,7 @@ func New(version, apiToken string) func() *schema.Provider {
 					Description: "The connection timeout for the Plumber server.",
 					Type:        schema.TypeInt,
 					Optional:    true,
-					Default:     schema.EnvDefaultFunc("PLUMBER_CONNECTION_TIMEOUT", 10),
+					DefaultFunc: schema.EnvDefaultFunc("PLUMBER_CONNECTION_TIMEOUT", 10),
 				},
 			},
 			ResourcesMap: map[string]*schema.Resource{
@@ -67,10 +67,13 @@ func New(version, apiToken string) func() *schema.Provider {
 
 func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
 	return func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-		token := d.Get("plumber_token").(string)
-		address := d.Get("address").(string)
+		cfg := &plumber.Config{
+			Address: d.Get("address").(string),
+			Token:   d.Get("plumber_token").(string),
+			Timeout: d.Get("connection_timeout").(int),
+		}
 
-		plumber, err := plumber.New(address, token)
+		plumber, err := plumber.New(cfg)
 		if err != nil {
 			return nil, diag.FromErr(err)
 		}

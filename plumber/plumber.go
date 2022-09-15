@@ -8,6 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/batchcorp/plumber-schemas/build/go/protos"
 	"github.com/batchcorp/plumber-schemas/build/go/protos/common"
@@ -19,27 +20,29 @@ type Plumber struct {
 	grpcConn *grpc.ClientConn
 }
 
-func New(address, token string) (*Plumber, error) {
+type Config struct {
+	Address string
+	Token   string
+	Timeout int
+}
+
+func New(cfg *Config) (*Plumber, error) {
 	opts := []grpc.DialOption{
 		grpc.WithBlock(),
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}
 
-	// TODO: configure
-	timeout := time.Second * 10
-
+	timeout := time.Duration(cfg.Timeout) * time.Second
 	dialContext, _ := context.WithTimeout(context.Background(), timeout)
 
-	conn, err := grpc.DialContext(dialContext, address, opts...)
+	conn, err := grpc.DialContext(dialContext, cfg.Address, opts...)
 	if err != nil {
-		return nil, fmt.Errorf("unable to connect to grpc address '%s': %s", address, err)
+		return nil, fmt.Errorf("unable to connect to grpc address '%s': %s", cfg.Address, err)
 	}
 
-	client := protos.NewPlumberServerClient(conn)
-
 	return &Plumber{
-		Token:    token,
-		Client:   client,
+		Token:    cfg.Token,
+		Client:   protos.NewPlumberServerClient(conn),
 		grpcConn: conn,
 	}, nil
 }
