@@ -74,33 +74,33 @@ func resourceRelay() *schema.Resource {
 				Type:        schema.TypeBool,
 				Required:    true,
 			},
-			"grpc": {
-				Description: "Optional GRPC-collector configuration",
-				Type:        schema.TypeList,
-				MaxItems:    1,
-				Optional:    true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"address": {
-							Description: "Address GRPC Collector Server",
-							Type:        schema.TypeString,
-							Optional:    true,
-							Default:     "grpc-collector.batch.sh:9000",
-						},
-						"connection_timeout": {
-							Description: "Connection timeout (in seconds)",
-							Type:        schema.TypeInt,
-							Optional:    true,
-							Default:     5,
-						},
-						"disable_tls": {
-							Description: "Disable TLS connection",
-							Type:        schema.TypeBool,
-							Optional:    true,
-						},
-					},
-				},
-			},
+			//"grpc": {
+			//	Description: "Optional GRPC-collector configuration",
+			//	Type:        schema.TypeList,
+			//	MaxItems:    1,
+			//	Optional:    true,
+			//	Elem: &schema.Resource{
+			//		Schema: map[string]*schema.Schema{
+			//			"address": {
+			//				Description: "Address GRPC Collector Server",
+			//				Type:        schema.TypeString,
+			//				Optional:    true,
+			//				Default:     "grpc-collector.batch.sh:9000",
+			//			},
+			//			"connection_timeout": {
+			//				Description: "Connection timeout (in seconds)",
+			//				Type:        schema.TypeInt,
+			//				Optional:    true,
+			//				Default:     5,
+			//			},
+			//			"disable_tls": {
+			//				Description: "Disable TLS connection",
+			//				Type:        schema.TypeBool,
+			//				Optional:    true,
+			//			},
+			//		},
+			//	},
+			//},
 			"kafka": {
 				Type:     schema.TypeList,
 				MaxItems: 1,
