@@ -267,7 +267,7 @@ func buildRelayOptions(d *schema.ResourceData) (*opts.RelayOptions, diag.Diagnos
 		ConnectionId:           d.Get("connection_id").(string),
 		NumWorkers:             int32(d.Get("num_workers").(int)),
 		StatsEnable:            false,
-		StatsReportIntervalSec: 0,
+		StatsReportIntervalSec: int32(d.Get("stats_report_interval_sec").(int)),
 		XActive:                d.Get("active").(bool),
 	}
 
