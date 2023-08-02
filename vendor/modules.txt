@@ -10,7 +10,7 @@ github.com/agext/levenshtein
 github.com/apparentlymart/go-textseg/v13/textseg
 # github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310
 github.com/armon/go-radix
-# github.com/batchcorp/plumber-schemas v0.0.165
+# github.com/batchcorp/plumber-schemas v0.0.180
 ## explicit
 github.com/batchcorp/plumber-schemas/build/go/protos
 github.com/batchcorp/plumber-schemas/build/go/protos/args
@@ -22,7 +22,7 @@ github.com/batchcorp/plumber-schemas/build/go/protos/records
 github.com/bgentry/speakeasy
 # github.com/fatih/color v1.7.0
 github.com/fatih/color
-# github.com/golang/protobuf v1.5.2
+# github.com/golang/protobuf v1.5.3
 github.com/golang/protobuf/proto
 github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
@@ -300,7 +300,7 @@ google.golang.org/grpc/serviceconfig
 google.golang.org/grpc/stats
 google.golang.org/grpc/status
 google.golang.org/grpc/tap
-# google.golang.org/protobuf v1.28.0
+# google.golang.org/protobuf v1.30.0
 google.golang.org/protobuf/encoding/prototext
 google.golang.org/protobuf/encoding/protowire
 google.golang.org/protobuf/internal/descfmt
